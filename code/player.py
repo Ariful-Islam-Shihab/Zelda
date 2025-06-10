@@ -8,7 +8,7 @@ class Player(Entity):
         super().__init__(groups)
         self.image=pygame.image.load('../graphics/test/player.png').convert_alpha()
         self.rect=self.image.get_rect(topleft=pos)
-        self.hitbox=self.rect.inflate(0,-26)
+        self.hitbox=self.rect.inflate(-6,HITBOX_OFFSET['player'])
         # Graphics setup
         self.import_player_assests()
         self.status='down'
@@ -41,9 +41,11 @@ class Player(Entity):
 
         # stats
         self.stats={'health':100,'energy':60,'attack':10,'magic':4,'speed':5}
+        self.max_stats={'health':300,'energy':140,'attack':20,'magic':10,'speed':10}
+        self.upgrade_cost={'health':100,'energy':100,'attack':100,'magic':100,'speed':100}
         self.health=self.stats['health']*0.5
         self.energy=self.stats['energy']*0.8
-        self.exp=123
+        self.exp=500
         self.speed=self.stats['speed']
 
         # damage timer
@@ -51,6 +53,9 @@ class Player(Entity):
         self.hurt_time=None
         self.invulnerability_duration=500
 
+        # import a sound
+        self.weapon_attac_sound=pygame.mixer.Sound('../audio/sword.wav')
+        self.weapon_attac_sound.set_volume(0.4)
 
 
     def import_player_assests(self):
@@ -101,6 +106,7 @@ class Player(Entity):
                 self.attacking=True
                 self.attack_time=pygame.time.get_ticks()
                 self.create_attack()
+                self.weapon_attac_sound.play()
             # Magic input
             if keys[pygame.K_LCTRL]:
                 self.attack_time=pygame.time.get_ticks()
@@ -139,6 +145,12 @@ class Player(Entity):
         else:
             if 'attack' in self.status:
                 self.status=self.status.replace('_attack','')
+
+    def get_value_by_index(self,index):
+        return list(self.stats.values())[index]
+
+    def get_cost_by_index(self,index):
+        return list(self.upgrade_cost.values())[index]
 
 
     def cooldowns(self):
@@ -196,5 +208,5 @@ class Player(Entity):
         self.cooldowns()
         self.get_status()
         self.animate()
-        self.move(self.speed)
+        self.move(self.stats['speed'])
         self.energy_recovery()

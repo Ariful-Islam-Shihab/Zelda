@@ -8,13 +8,14 @@ from tile import Tile
 from player import Player
 from debug import debug
 from random import choice, randint
-
+from upgrade import Upgrade
 from ui import UI
 from weapon import Weapon
 class Level:
     def __init__(self):
         # get the display surface
         self.display_surface=pygame.display.get_surface()
+        self.game_paused=False
         # Sprite group setup
         self.visible_sprites=YSortCameraGroup()
         self.obstacle_sprites=pygame.sprite.Group()
@@ -28,7 +29,7 @@ class Level:
 
         # user interface
         self.ui=UI()
-
+        self.upgrade=Upgrade(self.player)
         # Particles
         self.animation_player=AnimationPlayer()
         self.magic_player=MagicPlayer(self.animation_player)
@@ -85,7 +86,8 @@ class Level:
                                       [self.visible_sprites,self.attackable_sprites],
                                       self.obstacle_sprites,
                                       self.damage_player,
-                                      self.trigger_death_particles)
+                                      self.trigger_death_particles,
+                                      self.add_xp)
 
     def damage_player(self,amount,attack_type):
         if self.player.vulnerable:
@@ -95,13 +97,20 @@ class Level:
             # spawn particles
             self.animation_player.create_particles(attack_type,self.player.rect.center,[self.visible_sprites])
 
+    def toggle_menu(self):
+        self.game_paused=not self.game_paused
+
     def run(self):
-        # update and draw the game
         self.visible_sprites.custom_draw(self.player)
-        self.visible_sprites.update()
-        self.visible_sprites.enemy_update(self.player)
-        self.player_attack_logic()
         self.ui.display(self.player)
+        # update and draw the game
+        if self.game_paused:
+            self.upgrade.display()
+        else:
+            self.visible_sprites.update()
+            self.visible_sprites.enemy_update(self.player)
+            self.player_attack_logic()
+            
 
     def create_magic(self,style,strength,cost):
         if style=='heal':
@@ -134,6 +143,9 @@ class Level:
 
     def trigger_death_particles(self,pos,particle_type):
         self.animation_player.create_particles(particle_type,pos,[self.visible_sprites])
+    def add_xp(self,amount):
+        self.player.exp+=amount
+
 
 class YSortCameraGroup(pygame.sprite.Group):
     def __init__(self):
